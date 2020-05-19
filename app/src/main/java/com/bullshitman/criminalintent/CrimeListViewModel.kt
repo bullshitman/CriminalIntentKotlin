@@ -1,6 +1,7 @@
 package com.bullshitman.criminalintent
 
 import androidx.lifecycle.ViewModel
+import kotlin.random.Random
 
 class CrimeListViewModel : ViewModel() {
     val crimes = mutableListOf<Crime>()
@@ -9,6 +10,7 @@ class CrimeListViewModel : ViewModel() {
             val crime = Crime()
             crime.title = "Crime #$i"
             crime.isSolved = i % 2 == 0
+            crime.requirePolice = Random.nextBoolean()
             crimes += crime
         }
     }

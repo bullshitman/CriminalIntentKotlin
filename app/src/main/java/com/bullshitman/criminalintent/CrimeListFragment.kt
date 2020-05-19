@@ -13,6 +13,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 private const val TAG = "CrimeListFragment"
+private const val TYPE_VIEW_NORMAL = R.layout.list_item_crime
+private const val TYPE_VIEW_POLICE = R.layout.list_item_crime_police
 class CrimeListFragment : Fragment() {
     private lateinit var crimeRecyclerView: RecyclerView
     private var adapter: CrimeAdapter? = null
@@ -58,14 +60,25 @@ class CrimeListFragment : Fragment() {
         }
 
         override fun onClick(p0: View?) {
-            Toast.makeText(context, "${crime.title} pressed!", Toast.LENGTH_SHORT).show()
+            when (!crime.requirePolice) {
+              true -> Toast.makeText(context, "${crime.title} pressed!", Toast.LENGTH_SHORT).show()
+                else -> Toast.makeText(context, "${crime.title} required police pressed!", Toast.LENGTH_SHORT).show()
+            }
+
         }
     }
 
     private inner class CrimeAdapter(var crimes: List<Crime>) : RecyclerView.Adapter<CrimeHolder>() {
 
+        override fun getItemViewType(position: Int): Int {
+            return if(crimes[position].requirePolice)
+                TYPE_VIEW_POLICE
+            else
+                TYPE_VIEW_NORMAL
+            }
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CrimeHolder {
-            val view = layoutInflater.inflate(R.layout.list_item_crime, parent, false)
+            val view = layoutInflater.inflate(viewType, parent, false)
             return CrimeHolder(view)
         }
 
@@ -74,7 +87,6 @@ class CrimeListFragment : Fragment() {
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
             val crime = crimes[position]
             holder.bind(crime)
-
         }
 
     }
