@@ -82,9 +82,7 @@ class CrimeListFragment : Fragment() {
         override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
             val crime = crimes[position]
             holder.bind(crime)
-
         }
-
     }
 
     companion object {
