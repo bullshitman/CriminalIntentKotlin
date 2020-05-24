@@ -1,6 +1,7 @@
 package com.bullshitman.criminalintent
 
 import android.content.Context
+import android.opengl.Visibility
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -23,6 +24,8 @@ class CrimeListFragment : Fragment() {
     }
     private var callbacks: Callbacks? = null
     private lateinit var crimeRecyclerView: RecyclerView
+    private lateinit var emptyCrimeList: TextView
+    private lateinit var newCrimeImage: ImageView
     private var adapter: CrimeAdapter? = CrimeAdapter(emptyList())
     private val crimeListViewModel: CrimeListViewModel by lazy {
         ViewModelProvider(this@CrimeListFragment).get(CrimeListViewModel::class.java)
@@ -50,9 +53,21 @@ class CrimeListFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_crime_list, container, false)
         crimeRecyclerView = view.findViewById(R.id.crime_recycler_view) as RecyclerView
+        emptyCrimeList = view.findViewById(R.id.empty_crimes) as TextView
+        newCrimeImage = view.findViewById(R.id.new_crime) as ImageView
         crimeRecyclerView.layoutManager = LinearLayoutManager(context)
         crimeRecyclerView.adapter = adapter
         return view
+    }
+
+    override fun onStart() {
+        super.onStart()
+        newCrimeImage.setOnClickListener {
+            val crime = Crime()
+            crimeListViewModel.addCrime(crime)
+            callbacks?.onCrimeSelected(crime.id)
+        }
+
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -88,6 +103,15 @@ class CrimeListFragment : Fragment() {
     private fun updateUI(crimes: List<Crime>) {
         adapter = CrimeAdapter(crimes)
         crimeRecyclerView.adapter = adapter
+        if (adapter?.itemCount == 0) {
+            crimeRecyclerView.visibility = View.GONE
+            emptyCrimeList.visibility = View.VISIBLE
+            newCrimeImage.visibility = View.VISIBLE
+        } else {
+            crimeRecyclerView.visibility = View.VISIBLE
+            emptyCrimeList.visibility = View.GONE
+            newCrimeImage.visibility = View.GONE
+        }
     }
 
     private inner class CrimeHolder(view: View) : RecyclerView.ViewHolder(view),
