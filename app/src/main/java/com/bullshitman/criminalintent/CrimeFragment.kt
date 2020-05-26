@@ -1,16 +1,17 @@
 package com.bullshitman.criminalintent
 
+import android.Manifest
+import android.Manifest.permission.READ_CONTACTS
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.icu.text.MessageFormat.format
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.text.Editable
 import android.text.TextWatcher
-import android.text.format.DateFormat.format
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -18,12 +19,16 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker.checkSelfPermission
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
+
 private const val ARG_CRIME_ID = "crime_id"
 private const val TAG = "CrimeFragment"
 private const val DIALOG_DATE = "DialogDate"
@@ -37,6 +42,7 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
     private lateinit var solvedCheckBox: CheckBox
     private lateinit var reportButton: Button
     private lateinit var suspectButton: Button
+    private lateinit var suspectPhoneNumber: Button
     private val crimeDetailViewModel: CrimeDetailViewModel by lazy {
         ViewModelProvider(this@CrimeFragment).get(CrimeDetailViewModel::class.java)
     }
@@ -55,6 +61,7 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
         solvedCheckBox = view.findViewById(R.id.crime_solved)
         reportButton = view.findViewById(R.id.crime_report) as Button
         suspectButton = view.findViewById(R.id.crime_suspect) as Button
+        suspectPhoneNumber = view.findViewById(R.id.crime_call) as Button
         return view
     }
 
@@ -73,7 +80,19 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
                     updateUI()
                 }
             })
+        if (isPermissionGranted(READ_CONTACTS)) {
+            // Great, got the permission
+        } else {
+            ActivityCompat.requestPermissions(activity!!,
+                arrayOf(Manifest.permission.READ_CONTACTS),
+                REQUEST_CONTACT)
+        }
     }
+    private fun isPermissionGranted(permission:String):Boolean =
+        ContextCompat.checkSelfPermission(
+            activity!!,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED
 
     override fun onStart() {
         super.onStart()
@@ -122,13 +141,17 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
                 isEnabled = false
             }
         }
+        suspectPhoneNumber.setOnClickListener {
+            val makeCallIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${suspectPhoneNumber.text}"))
+                startActivity(makeCallIntent)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when {
             resultCode != Activity.RESULT_OK -> return
 
-            resultCode == REQUEST_CONTACT && data != null -> {
+            requestCode == REQUEST_CONTACT && data != null -> {
                 val contactUri: Uri = data.data ?: return
                 val queryFields = arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
                 val cursor = requireActivity().contentResolver
@@ -142,6 +165,31 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
                     crime.suspect = suspect
                     crimeDetailViewModel.saveCrime(crime)
                     suspectButton.text = suspect
+                }
+                var contactId = ""
+                val cursorId = requireActivity().contentResolver
+                    .query(contactUri, arrayOf(ContactsContract.Contacts._ID), null, null, null)
+                cursorId?.use {
+                    if (it.count == 0) {
+                        return
+                    }
+                    it.moveToFirst()
+                    contactId = it.getString(it.getColumnIndex(ContactsContract.Contacts._ID))
+                }
+                val cursorPhone = requireActivity().contentResolver
+                    .query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ? AND " +
+                            ContactsContract.CommonDataKinds.Phone.TYPE + " = " +
+                            ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+                        arrayOf(contactId), null)
+                cursorPhone?.let {
+                    if (it.count == 0) {
+                        return
+                    }
+                    if (cursorPhone.moveToFirst()) {
+                        val contactNumber = cursorPhone.getString(cursorPhone.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        suspectPhoneNumber.text = contactNumber
+                    }
                 }
             }
         }
