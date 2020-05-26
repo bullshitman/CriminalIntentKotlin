@@ -107,6 +107,7 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
                 crime.title = p0.toString()
             }
         }
+
         titleField.addTextChangedListener(titleWatcher)
         solvedCheckBox.apply {
             setOnCheckedChangeListener { _, isChecked ->
@@ -119,6 +120,7 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
                 show(this@CrimeFragment.parentFragmentManager, DIALOG_DATE)
             }
         }
+
         reportButton.setOnClickListener {
             Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -129,6 +131,7 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
                 startActivity(chooserIntent)
             }
         }
+
         suspectButton.apply {
             val pickContactIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
             setOnClickListener {
