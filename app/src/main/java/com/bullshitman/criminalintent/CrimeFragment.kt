@@ -16,6 +16,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.*
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
@@ -28,6 +29,7 @@ import java.util.*
 private const val ARG_CRIME_ID = "crime_id"
 private const val TAG = "CrimeFragment"
 private const val DIALOG_DATE = "DialogDate"
+private const val DIALOG_IMAGE = "DialogImage"
 private const val REQUEST_DATE = 0
 private const val REQUEST_CONTACT = 1
 private const val REQUEST_PHOTO = 2
@@ -155,6 +157,20 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
                 startActivityForResult(captureImage, REQUEST_PHOTO)
             }
         }
+        photoView.setOnClickListener {
+            val fragmentManager = parentFragmentManager
+            PreviewImageFragment.newInstance(photoFile.path).apply {
+                    setTargetFragment(this@CrimeFragment, REQUEST_PHOTO)
+                    show(fragmentManager, DIALOG_IMAGE)
+                }
+        }
+        photoView.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                photoView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                photoFile = crimeDetailViewModel.getPhotoFile(crime)
+                updatePhotoView()
+            }
+        })
     }
 
     override fun onDetach() {
