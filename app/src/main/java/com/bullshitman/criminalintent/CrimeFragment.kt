@@ -217,6 +217,7 @@ class CrimeFragment : Fragment(), DatePickerFragment.Callbacks{
         }
         updatePhotoView()
     }
+
     private fun updatePhotoView() {
         if (photoFile.exists()) {
             val bitmap = getScaledBitmap(photoFile.path, requireActivity())
